@@ -11,7 +11,6 @@ import (
 
 	"owldemo/feature/contact/web"
 	"owldemo/sys/persistence"
-	"owldemo/web"
 	"owldemo/web/layout"
 	"owldemo/web/ui/crud"
 )
@@ -83,7 +82,7 @@ func handleSave(service contactService) owl.Handler {
 		item.ID = id
 		ctx.Validate(item)
 		if !ctx.ModelState.Valid {
-			return web.Invalid(ctx, contactweb.Texts)
+			return ctx.JsonInvalid(contactweb.Texts)
 		}
 		saved, err := service.Save(item)
 		if err != nil {

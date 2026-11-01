@@ -15,9 +15,7 @@ import (
 
 func main() {
 	island.Run(map[string]func(string) hx.INode{
-		"theme":          theme.Build,
-		"products-stats": productweb.StatsIsland,
-		"products":       productweb.ListIsland,
-		"contacts":       contactweb.ListIsland,
-	})
+		"theme":    theme.Build,
+		"contacts": contactweb.ListIsland,
+	}, productweb.StatsIsland, productweb.ListIsland)
 }

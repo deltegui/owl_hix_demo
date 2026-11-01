@@ -7,11 +7,11 @@ import (
 	"strconv"
 
 	"github.com/deltegui/owl/v3"
+	"github.com/deltegui/owl/v3/island"
 	"github.com/deltegui/owl/v3/pagination"
 
 	"owldemo/feature/product/web"
 	"owldemo/sys/persistence"
-	"owldemo/web"
 	"owldemo/web/layout"
 	"owldemo/web/ui/crud"
 )
@@ -58,8 +58,8 @@ func handleShowIndex(service productService) owl.Handler {
 			Bundle: "full",
 			Chart:  true,
 			Islands: []layout.Island{
-				{Name: "products-stats", State: encode(productweb.StatsState{Stats: stats, Lang: lang}), Build: productweb.StatsIsland},
-				{Name: "products", State: encode(crud.State[productweb.Product]{Page: &page, Lang: lang}), Build: productweb.ListIsland},
+				layout.Of(island.Mount(productweb.StatsIsland, productweb.StatsState{Stats: stats, Lang: lang})),
+				layout.Of(island.Mount(productweb.ListIsland, crud.State[productweb.Product]{Page: &page, Lang: lang})),
 			},
 		})
 	}
@@ -100,7 +100,7 @@ func handleSave(service productService) owl.Handler {
 		item.ID = id
 		ctx.Validate(item)
 		if !ctx.ModelState.Valid {
-			return web.Invalid(ctx, productweb.Texts)
+			return ctx.JsonInvalid(productweb.Texts)
 		}
 		saved, err := service.Save(item)
 		if err != nil {

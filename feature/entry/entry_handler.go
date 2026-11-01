@@ -14,7 +14,6 @@ import (
 	"owldemo/feature/entry/web"
 	"owldemo/sys/ledger"
 	"owldemo/sys/persistence"
-	"owldemo/web"
 	"owldemo/web/layout"
 )
 
@@ -125,7 +124,7 @@ func handleSave(service entryService) owl.Handler {
 
 		validate(&ctx, dto)
 		if !ctx.ModelState.Valid {
-			return web.Invalid(ctx, entryweb.Texts)
+			return ctx.JsonInvalid(entryweb.Texts)
 		}
 		e, err := toDomain(dto)
 		if err != nil {
@@ -229,14 +228,14 @@ func validate(ctx *owl.Ctx, dto entryweb.Entry) {
 func domainFailure(ctx owl.Ctx, err error) error {
 	var domain core.DomainError
 	if errors.As(err, &domain) {
-		return web.Failure(ctx, domain)
+		return ctx.JsonFailure(domain)
 	}
-	return web.Failure(ctx, errInvalid.Wrap(err))
+	return ctx.JsonFailure(errInvalid.Wrap(err))
 }
 
 func failure(ctx owl.Ctx, err error) error {
 	if errors.Is(err, persistence.ErrNotFound) {
-		return web.Failure(ctx, errNotFound)
+		return ctx.JsonFailure(errNotFound)
 	}
 	ctx.Status(http.StatusInternalServerError)
 	return ctx.String("Internal error")

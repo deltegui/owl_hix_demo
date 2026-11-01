@@ -167,16 +167,3 @@ func Check(value *hx.SignalT[bool], label string) hx.INode {
 			hx.Input().Type("checkbox").Class("form-check-input").BindChecked(value).BindOnChecked(value),
 			hx.Span().Text(" "+label)))
 }
-
-// The page around the islands. It is rendered on the server and reloads on navigation.
-
-// Island is the element of the island called name. The server puts the island
-// inside it; the browser hydrates it (see mount).
-func Island(name string) hx.INode {
-	return hx.Div().Id(IslandID(name)).Attribute("data-island", name)
-}
-
-func IslandID(name string) string { return "island-" + name }
-
-// StateID is the id of the script element that has the state of the island.
-func StateID(name string) string { return "island-" + name + "-state" }

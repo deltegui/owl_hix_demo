@@ -46,7 +46,7 @@ const MARK = `document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("body *").forEach((e) => { e.__seen = true; });
 });`;
 
-async function openPage() {
+async function openPage(extraScript = "") {
   const target = await (await fetch(`http://localhost:${CHROME_PORT}/json/new?about:blank`, { method: "PUT" })).json();
   const ws = new WebSocket(target.webSocketDebuggerUrl);
   await new Promise((r) => (ws.onopen = r));
@@ -60,7 +60,7 @@ async function openPage() {
   const send = (method, params = {}) => new Promise((r) => { const i = ++id; pending.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
   await send("Runtime.enable");
   await send("Page.enable");
-  await send("Page.addScriptToEvaluateOnNewDocument", { source: MARK });
+  await send("Page.addScriptToEvaluateOnNewDocument", { source: MARK + extraScript });
   const evaluate = async (expression) => (await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true }))?.result?.value;
   // Goes to the page and waits until the WASM has hydrated what the page has.
   const goto = async (path) => {
@@ -72,7 +72,7 @@ async function openPage() {
     }
     await sleep(500);
   };
-  return { evaluate, goto, logs, close: () => ws.close() };
+  return { evaluate, goto, send, logs, close: () => ws.close(), closeTab: async () => { ws.close(); await fetch(`http://localhost:${CHROME_PORT}/json/close/${target.id}`); } };
 }
 
 let failures = 0;
@@ -171,6 +171,45 @@ for (const path of ["/products", "/contacts", "/entries", "/forms/product", "/fo
   check(`${path}: no mismatch, no error in the console`, problems(page.logs).length === 0, problems(page.logs).join(" | "));
   check(`${path}: the ${r.total} elements of the server are the ones in use`, r.recreated === 0, `${r.recreated} were created again`);
 }
+
+// --- Events before the WASM loads: they are replayed ---------------------------
+
+console.log("--- events before hydration");
+// The page holds the request for the WASM until the script says so, so there is
+// time to use the page first (hx.ReplayScript records it, island.Run replays it).
+const GATE = `window.__gate = new Promise((r) => { window.__release = r; });
+const realFetch = window.fetch.bind(window);
+window.fetch = (u, ...a) => String(u).endsWith(".wasm") ? window.__gate.then(() => realFetch(u, ...a)) : realFetch(u, ...a);`;
+const early = await openPage(GATE);
+await early.send("Page.navigate", { url: BASE + "/products" });
+for (let i = 0; i < 100 && !(await early.evaluate(`!!window.__hxq && !!document.querySelector("#island-products table")`)); i++) await sleep(50);
+const beforeEarly = await early.evaluate(`(() => { try {
+  const theme = document.querySelector("#island-theme select");
+  const open = [...document.querySelectorAll("main button")].find((b) => /Nuevo producto|New product/.test(b.textContent));
+  const filter = document.querySelector("main form input[type=text]");
+  theme.value = "dark"; theme.dispatchEvent(new Event("change", { bubbles: true }));
+  filter.value = "atlas"; filter.dispatchEvent(new Event("input", { bubbles: true }));
+  open.click();
+  return { modal: !!document.querySelector(".modal.show"), queued: window.__hxq.length, hydrated: window.__hxHydrationMismatches !== undefined };
+  } catch (e) { return { error: String(e), modal: false, queued: -1 }; } })()`);
+await early.evaluate(`window.__release()`);
+for (let i = 0; i < 100 && !(await early.evaluate(`window.__hxHydrationMismatches !== undefined`)); i++) await sleep(100);
+await sleep(800);
+const afterEarly = await early.evaluate(`(() => ({
+  modal: !!document.querySelector(".modal.show"),
+  theme: document.querySelector("#island-theme select").value,
+  bsTheme: document.documentElement.dataset.bsTheme,
+  filter: document.querySelector("main form input[type=text]").value,
+  queue: window.__hxq === undefined ? "stopped" : window.__hxq.length,
+}))()`);
+check("before hydration nothing responds (the page is only HTML)", !beforeEarly.modal && !beforeEarly.hydrated && beforeEarly.queued === 3, JSON.stringify(beforeEarly));
+check("the click on a button is replayed (the modal opens)", afterEarly.modal, JSON.stringify(afterEarly));
+check("the change of a select is replayed (the theme)", afterEarly.theme === "dark" && afterEarly.bsTheme === "dark", JSON.stringify(afterEarly));
+check("the text typed in a field is kept", afterEarly.filter === "atlas", afterEarly.filter);
+check("the recording is stopped when every island is hydrated", afterEarly.queue === "stopped", String(afterEarly.queue));
+check("no errors in the console", problems(early.logs).length === 0, problems(early.logs).join(" | "));
+await early.evaluate(`localStorage.removeItem("theme")`); // the theme check below starts from "auto"
+await early.closeTab();
 
 // --- Products: the screen (in English: the language button of the page) ----------------------------------------------------
 

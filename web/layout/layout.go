@@ -8,9 +8,9 @@ import (
 	"github.com/deltegui/hx"
 	"github.com/deltegui/owl/v3"
 	"github.com/deltegui/owl/v3/hxui"
+	"github.com/deltegui/owl/v3/island"
 
 	"owldemo/web/locale"
-	"owldemo/web/ui/bs"
 )
 
 // MenuItem is a link of the side menu. The label is already translated.
@@ -27,6 +27,10 @@ type Island struct {
 	State string
 	Build func(state string) hx.INode
 }
+
+// Of is an island defined with island.Define, placed with its state:
+// layout.Of(island.Mount(productweb.List, state)).
+func Of(i island.Instance) Island { return Island{Name: i.Name(), State: i.State, Build: i.Build} }
 
 // Page is what a handler gives to Render.
 type Page struct {
@@ -48,17 +52,17 @@ func Render(ctx owl.Ctx, p Page) error {
 
 func build(ctx owl.Ctx, p Page) hx.INode {
 	shared := hxui.NewView(ctx, locale.Shared)
-	csrfToken := ctx.CsrfToken()
 
+	// The theme selector goes in the menu of every page that has a bundle.
 	var footer []hx.INode
-	islands := p.Islands
-	if p.Bundle != "" {
-		islands = append(islands[:len(islands):len(islands)], Island{Name: "theme", State: shared.T("Shared.Theme"), Build: themeBuild})
+	var instances []island.Instance
+	for _, i := range p.Islands {
+		instances = append(instances, i.instance())
 	}
-	for _, i := range islands {
-		if i.Name == "theme" {
-			footer = append(footer, hx.Div().Class("mb-3").Body(host(i)))
-		}
+	if p.Bundle != "" {
+		theme := Island{Name: "theme", State: shared.T("Shared.Theme"), Build: themeBuild}.instance()
+		instances = append(instances, theme)
+		footer = append(footer, hx.Div().Class("mb-3").Body(theme.Node()))
 	}
 	footer = append(footer, languages(ctx, shared))
 
@@ -70,39 +74,26 @@ func build(ctx owl.Ctx, p Page) hx.INode {
 		content = append(content, host(i))
 	}
 
-	body := []hx.INode{
+	opts := hxui.AppOptions{
+		Title:   p.Title + " · OWL demo",
+		Head:    []hx.INode{hxui.Stylesheet(bootstrapCSS)},
+		Bundle:  p.Bundle,
+		Islands: instances,
+	}
+	if p.Chart {
+		opts.Scripts = []hx.INode{hx.El("script").Src("https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js")}
+	}
+	return hxui.App(ctx, opts,
 		hx.Div().Class("d-flex", "min-vh-100").Body(
 			sidebar(ctx, shared, footer),
-			hx.Main().Class("flex-grow-1", "p-4").BodyList(content)),
-	}
-	for _, i := range islands {
-		if i.State != "" {
-			body = append(body, hx.Raw(hx.StateScript(bs.StateID(i.Name), i.State)))
-		}
-	}
-	if p.Bundle != "" {
-		if p.Chart {
-			body = append(body, hx.El("script").Src("https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"))
-		}
-		body = append(body, hx.El("script").Src("/js/wasm_exec.js"), hx.Raw("<script>"+loader(p.Bundle)+"</script>"))
-	}
-
-	return hx.El("html").Attribute("lang", ctx.GetCurrentLanguage()).Body(
-		hx.El("head").Body(
-			hx.El("meta").Attribute("charset", "utf-8"),
-			hx.El("meta").Attribute("name", "viewport").Attribute("content", "width=device-width, initial-scale=1"),
-			hx.El("meta").Attribute("name", "csrf-token").Attribute("content", csrfToken),
-			hx.El("title").Text(p.Title+" · OWL demo"),
-			hx.El("link").Attribute("rel", "stylesheet").Href(bootstrapCSS)),
-		hx.El("body").BodyList(body))
+			hx.Main().Class("flex-grow-1", "p-4").BodyList(content)))
 }
 
 // host is the element of an island, with the island built inside it.
-func host(i Island) hx.INode { return bs.Island(i.Name).Body(i.Build(i.State)) }
+func host(i Island) hx.INode { return i.instance().Node() }
 
-func loader(bundle string) string {
-	return `const go = new Go();
-WebAssembly.instantiateStreaming(fetch("/js/` + bundle + `.wasm"), go.importObject).then((r) => go.run(r.instance));`
+func (i Island) instance() island.Instance {
+	return island.Instance{Island: island.Func(i.Name, i.Build), State: i.State}
 }
 
 func sidebar(ctx owl.Ctx, shared hxui.View, footer []hx.INode) hx.INode {
