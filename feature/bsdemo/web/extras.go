@@ -87,7 +87,8 @@ func moreMenus() hx.INode {
 	modal, full := hx.Signal(false), hx.Signal(false)
 	return bs.Stack(3,
 		hx.Div().Class("d-flex", "gap-3", "align-items-center", "flex-wrap").Body(
-			bs.SplitDropdown(split, "Action", func() { last.Set("main") }, []hx.INode{pick("split-a", split), pick("split-b", split)}, bs.Danger),
+			bs.SplitDropdown(bs.SplitDropdownOptions{Open: split, Label: "Action", OnClick: func() { last.Set("main") },
+				Items: []hx.INode{pick("split-a", split), pick("split-b", split)}, Mods: []bs.Mod{bs.Danger}}),
 			bs.Dropdown(up, "Dropup", []hx.INode{pick("up-a", up), pick("up-b", up)}, bs.Dropup, bs.Info),
 			bs.Dropdown(end, "Menu end", []hx.INode{pick("end-a", end)}, bs.MenuEnd, bs.Outline(bs.Secondary)),
 			hx.P().Class("mb-0").Body(hx.Span().Text("Last: "), hx.Strong().Attribute("data-demo", "last").BindText(last))),
@@ -101,8 +102,9 @@ func moreMenus() hx.INode {
 		hx.Div().Class("d-flex", "gap-2").Body(
 			bs.Button("Scrollable modal", bs.Secondary).OnClick(func(hx.EventContext) { modal.Set(true) }),
 			bs.Button("Fullscreen modal", bs.Dark).OnClick(func(hx.EventContext) { full.Set(true) })),
-		bs.Modal(modal, "Long text", func() { modal.Set(false) }, func() hx.INode {
+		bs.Modal(bs.ModalOptions{Open: modal, Title: "Long text", Scrollable: true, Body: func() hx.INode {
 			return hx.Div().Style("height", "1500px").Text("A very tall body")
-		}, nil, bs.Scrollable),
-		bs.ModalCentered(full, "Everything", func() { full.Set(false) }, func() hx.INode { return hx.P().Text("Fills the screen.") }, nil, bs.Fullscreen))
+		}}),
+		bs.Modal(bs.ModalOptions{Open: full, Title: "Everything", Fullscreen: true, Centered: true,
+			Body: func() hx.INode { return hx.P().Text("Fills the screen.") }}))
 }

@@ -54,8 +54,9 @@ func surfaces() hx.INode {
 				coat.Row(2, coat.Avatar("", "", "AB"), coat.Avatar("", "", "CD", coat.Lg),
 					coat.AvatarGroup(coat.Avatar("", "", "E"), coat.Avatar("", "", "F"), coat.Avatar("", "", "G"))),
 				coat.ItemGroup(
-					coat.Item("Ada Lovelace", "Mathematician", coat.Avatar("", "", "AL"), coat.Button("Follow", coat.Outline, coat.Sm), coat.Outline),
-					coat.Item("Alan Turing", "Computer scientist", nil, nil, coat.Muted)))),
+					coat.Item(coat.ItemOptions{Title: "Ada Lovelace", Description: "Mathematician", Media: coat.Avatar("", "", "AL"),
+						Actions: coat.Button("Follow", coat.Outline, coat.Sm), Mods: []coat.Mod{coat.Outline}}),
+					coat.Item(coat.ItemOptions{Title: "Alan Turing", Description: "Computer scientist", Mods: []coat.Mod{coat.Muted}})))),
 		coat.Empty("No projects yet", "Create your first project to get started.", coat.Button("New project")))
 }
 
@@ -109,7 +110,7 @@ func navigation() hx.INode {
 		coat.Accordion("faq",
 			coat.AccordionItem{Title: "Is it accessible?", Body: hx.P().Text("Yes: it is the native details element."), Open: true},
 			coat.AccordionItem{Title: "Does it need JavaScript?", Body: hx.P().Text("No, only Hix signals.")}),
-		coat.Pagination(page, pages, page.Set))
+		coat.Pagination(coat.PaginationOptions{Page: page, Pages: pages}))
 }
 
 func dialogs() hx.INode {
@@ -119,19 +120,19 @@ func dialogs() hx.INode {
 		coat.Button("Open dialog", coat.Outline).OnClick(func(hx.EventContext) { dialog.Set(true) }),
 		coat.Button("Open alert dialog", coat.Destructive).OnClick(func(hx.EventContext) { alert.Set(true) }),
 		coat.Button("Open drawer", coat.Outline).OnClick(func(hx.EventContext) { drawer.Set(true) }),
-		coat.Dialog(dialog, func() { dialog.Set(false) }, "Edit profile", "Make changes to your profile here.",
-			func() hx.INode { return hx.P().Text("A dialog is in the tree only while it is open.") },
-			func() hx.INode {
+		coat.Dialog(coat.DialogOptions{Open: dialog, Title: "Edit profile", Description: "Make changes to your profile here.",
+			Body: func() hx.INode { return hx.P().Text("A dialog is in the tree only while it is open.") },
+			Footer: func() hx.INode {
 				return coat.Button("Save changes").OnClick(func(hx.EventContext) { dialog.Set(false) })
-			}),
-		coat.AlertDialog(alert, "Are you absolutely sure?", "This action cannot be undone.",
-			func() hx.INode {
+			}}),
+		coat.AlertDialog(coat.AlertDialogOptions{Open: alert, Title: "Are you absolutely sure?", Description: "This action cannot be undone.",
+			Footer: func() hx.INode {
 				return hx.Noop().Body(coat.Button("Cancel", coat.Outline).OnClick(func(hx.EventContext) { closeAll() }),
 					coat.Button("Continue").OnClick(func(hx.EventContext) { closeAll() }))
-			}),
-		coat.Drawer(drawer, func() { drawer.Set(false) }, "Move goal", "Set your daily activity goal.",
-			func() hx.INode { return hx.P().Text("A drawer comes from the bottom by default.") },
-			func() hx.INode { return coat.Button("Submit").OnClick(func(hx.EventContext) { drawer.Set(false) }) }))
+			}}),
+		coat.Drawer(coat.DrawerOptions{Open: drawer, Title: "Move goal", Description: "Set your daily activity goal.",
+			Body:   func() hx.INode { return hx.P().Text("A drawer comes from the bottom by default.") },
+			Footer: func() hx.INode { return coat.Button("Submit").OnClick(func(hx.EventContext) { drawer.Set(false) }) }}))
 }
 
 func menus() hx.INode {
@@ -152,7 +153,7 @@ func menus() hx.INode {
 				coat.MenuItem("Delete", func() { chosen.Set("delete") }, coat.Destructive)}),
 			coat.Popover(pop, coat.Button("Open popover", coat.Outline), hx.Div().Class("p-2").Body(hx.P().Text("Dimensions"), hx.P().Class("text-sm", "text-muted-foreground").Text("Set the size of the layer."))),
 			coat.SelectMenu(pick, "Pick a letter", []coat.Option{{Value: "a", Label: "Alpha"}, {Value: "b", Label: "Beta"}, {Value: "c", Label: "Gamma"}}),
-			coat.Combobox(combo, "Select fruit…", "Search fruit…", fruit),
+			coat.Combobox(coat.ComboboxOptions{Value: combo, Placeholder: "Select fruit…", SearchPlaceholder: "Search fruit…", Options: fruit}),
 			coat.Tooltip(coat.Button("Hover me", coat.Outline), "Add to library")),
 		hx.P().Class("text-sm").Body(hx.Span().Text("Chose: "), hx.Strong().BindText(chosen)),
 		coat.Command(query, "Type a command or search…",

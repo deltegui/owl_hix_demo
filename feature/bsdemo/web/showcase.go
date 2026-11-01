@@ -124,7 +124,7 @@ func navigation() hx.INode {
 		bs.Accordion(faq,
 			bs.AccordionItem{ID: "a", Title: "Is it accessible?", Body: func() hx.INode { return hx.P().Text("Yes.") }},
 			bs.AccordionItem{ID: "b", Title: "Does it need JavaScript?", Body: func() hx.INode { return hx.P().Text("No, only Hix signals.") }}),
-		bs.Pagination(page, pages, page.Set))
+		bs.Pagination(bs.PaginationOptions{Page: page, Pages: pages}))
 }
 
 func overlays() hx.INode {
@@ -135,15 +135,15 @@ func overlays() hx.INode {
 		bs.Button("Open centered", bs.Secondary).OnClick(func(hx.EventContext) { centered.Set(true) }),
 		bs.Button("Open offcanvas", bs.Info).OnClick(func(hx.EventContext) { side.Set(true) }),
 		bs.Button("Show toast", bs.Success).OnClick(func(hx.EventContext) { toast.Set(true) }),
-		bs.Modal(modal, "Edit profile", func() { modal.Set(false) },
-			func() hx.INode { return hx.P().Text("A modal is in the tree only while it is open.") },
-			func() hx.INode { return bs.Button("Save").OnClick(func(hx.EventContext) { modal.Set(false) }) }),
-		bs.ModalCentered(centered, "Centered", func() { centered.Set(false) },
-			func() hx.INode { return hx.P().Text("In the middle.") }, nil, bs.Sm),
-		bs.Offcanvas(side, "start", "Menu", func() { side.Set(false) },
-			func() hx.INode { return hx.P().Text("An offcanvas from the left.") }),
+		bs.Modal(bs.ModalOptions{Open: modal, Title: "Edit profile",
+			Body:   func() hx.INode { return hx.P().Text("A modal is in the tree only while it is open.") },
+			Footer: func() hx.INode { return bs.Button("Save").OnClick(func(hx.EventContext) { modal.Set(false) }) }}),
+		bs.Modal(bs.ModalOptions{Open: centered, Title: "Centered", Centered: true, Size: bs.Sm,
+			Body: func() hx.INode { return hx.P().Text("In the middle.") }}),
+		bs.Offcanvas(bs.OffcanvasOptions{Open: side, Title: "Menu",
+			Body: func() hx.INode { return hx.P().Text("An offcanvas from the left.") }}),
 		bs.ToastContainer("bottom-0 end-0",
-			bs.Toast(toast, "Saved", func() { toast.Set(false) }, func() hx.INode { return hx.Span().Text("Event created") })))
+			bs.Toast(bs.ToastOptions{Open: toast, Title: "Saved", Body: func() hx.INode { return hx.Span().Text("Event created") }})))
 }
 
 func menus() hx.INode {
