@@ -17,7 +17,7 @@ const (
 )
 
 // The rules of the domain that are not about a field. The code is the key of
-// the translation in common/errors.json.
+// the translation in web/locale/errors.go.
 var (
 	errUnbalanced = core.DomainError{Code: 2001, Message: "debit and credit must be the same amount"}
 	errNotBasic   = core.DomainError{Code: 2002, Message: "the lines are not a basic operation"}

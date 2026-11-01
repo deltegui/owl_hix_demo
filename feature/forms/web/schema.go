@@ -3,8 +3,6 @@
 // without knowing the struct. It builds on both sides.
 package formsweb
 
-import "owldemo/web/ui/crud"
-
 // Kinds of control.
 const (
 	Text   = "text"
@@ -34,8 +32,8 @@ type Field struct {
 	Max      *float64 `json:"max,omitempty"`
 }
 
-// State is the state of the island: the form and the translations.
+// State is the state of the island: the form and the language.
 type State struct {
-	Form  Form       `json:"form"`
-	Texts crud.Texts `json:"t"`
+	Form Form   `json:"form"`
+	Lang string `json:"l"`
 }

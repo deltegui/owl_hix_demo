@@ -18,8 +18,9 @@ func Changed() { Version.Update(func(n int) int { return n + 1 }) }
 // Screen is the list of products. state.Page is the first page, which the server
 // rendered; if it is nil the screen loads it.
 func Screen(state crud.State[Product]) hx.INode {
+	t := TextsFor(state.Lang)
 	return crud.Screen(crud.Config[Product]{
-		Texts:   state.Texts,
+		Texts:   t,
 		API:     "/api/products",
 		Initial: state.Page,
 		Changed: Changed,
@@ -29,7 +30,7 @@ func Screen(state crud.State[Product]) hx.INode {
 		Columns: []crud.Column[Product]{
 			crud.TextCol("#", func(p Product) string { return fmt.Sprint(p.ID) }),
 			crud.TextCol("Name", func(p Product) string { return p.Name }),
-			crud.TextCol("Category", func(p Product) string { return state.Texts.Or("Opt."+p.Category, p.Category) }),
+			crud.TextCol("Category", func(p Product) string { return t.Or("Opt."+p.Category, p.Category) }),
 			crud.TextCol("Price", func(p Product) string { return fmt.Sprintf("%.2f", p.Price) }),
 			crud.ActiveCol("Status", func(p Product) bool { return p.Active }),
 		},

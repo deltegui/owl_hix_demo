@@ -24,7 +24,7 @@ func Island(state string) hx.INode {
 
 // Build draws the form. There is nothing to load: the description is in the state.
 func Build(state State) hx.INode {
-	form, t := state.Form, state.Texts
+	form, t := state.Form, TextsFor(state.Lang)
 	text := map[string]*hx.SignalT[string]{}
 	checks := map[string]*hx.SignalT[bool]{}
 	for _, f := range form.Fields {

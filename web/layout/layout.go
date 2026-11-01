@@ -1,7 +1,7 @@
 // Package layout is the page around the features: the side menu, the theme
 // selector, the language buttons, and the islands with their state. It is what
 // views/shared/layout.html is in LittleCash, written with Hix and rendered by
-// OWL's HixRenderer.
+// ctx.View.
 package layout
 
 import (
@@ -41,14 +41,14 @@ type Page struct {
 
 const bootstrapCSS = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
 
-// Render writes the page with the renderer of the Mux.
+// Render writes the page with ctx.View.
 func Render(ctx owl.Ctx, p Page) error {
 	return ctx.View(owl.HixView(func(ctx owl.Ctx) hx.INode { return build(ctx, p) }))
 }
 
 func build(ctx owl.Ctx, p Page) hx.INode {
 	shared := hxui.NewView(ctx, locale.Shared)
-	csrfToken, _ := ctx.Get(csrfKey).(string)
+	csrfToken := ctx.CsrfToken()
 
 	var footer []hx.INode
 	islands := p.Islands
@@ -130,7 +130,7 @@ func sidebar(ctx owl.Ctx, shared hxui.View, footer []hx.INode) hx.INode {
 // forms, so they work without JavaScript, and they carry the CSRF token.
 func languages(ctx owl.Ctx, shared hxui.View) hx.INode {
 	buttons := []hx.INode{}
-	for _, lang := range []string{"es", "en"} {
+	for _, lang := range locale.Languages {
 		buttons = append(buttons, hx.Form().Attribute("method", "post").Attribute("action", "/language/"+lang).Class("d-inline").Body(
 			shared.CsrfInput(),
 			hx.Input().Type("hidden").Attribute("name", "Next").Value(ctx.Req.URL.RequestURI()),

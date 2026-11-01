@@ -11,5 +11,8 @@ func (menuService) items() []struct{ Href, Key string } {
 		{"/forms/product", "Menu.NewProduct"},
 		{"/forms/contact", "Menu.NewContact"},
 		{"/about", "Menu.About"},
+		{"/bulma", "Menu.Bulma"},
+		{"/coat", "Menu.Coat"},
+		{"/bs", "Menu.Bs"},
 	}
 }

@@ -16,8 +16,6 @@ import (
 	"owldemo/web/ui/crud"
 )
 
-const viewProductIndex string = "product/product_index"
-
 func filterOf(ctx owl.Ctx) productFilter {
 	return productFilter{
 		Name:     ctx.GetQueryParam("name"),
@@ -36,8 +34,6 @@ func pageOf(list pagination.List[productweb.Product]) crud.Page[productweb.Produ
 	}
 }
 
-func texts(ctx owl.Ctx) crud.Texts { return crud.Texts(ctx.GetLocalizer(viewProductIndex)) }
-
 func encode(v any) string {
 	text, _ := json.Marshal(v)
 	return string(text)
@@ -55,14 +51,15 @@ func handleShowIndex(service productService) owl.Handler {
 			return ctx.StringInternalServerError("Error reading the stats")
 		}
 		page := pageOf(list)
-		t := texts(ctx)
+		lang := ctx.GetCurrentLanguage()
+		t := productweb.TextsFor(lang)
 		return layout.Render(ctx, layout.Page{
 			Title:  t.Get("Title"),
 			Bundle: "full",
 			Chart:  true,
 			Islands: []layout.Island{
-				{Name: "products-stats", State: encode(productweb.StatsState{Stats: stats, Texts: t}), Build: productweb.StatsIsland},
-				{Name: "products", State: encode(crud.State[productweb.Product]{Page: &page, Texts: t}), Build: productweb.ListIsland},
+				{Name: "products-stats", State: encode(productweb.StatsState{Stats: stats, Lang: lang}), Build: productweb.StatsIsland},
+				{Name: "products", State: encode(crud.State[productweb.Product]{Page: &page, Lang: lang}), Build: productweb.ListIsland},
 			},
 		})
 	}
@@ -103,7 +100,7 @@ func handleSave(service productService) owl.Handler {
 		item.ID = id
 		ctx.Validate(item)
 		if !ctx.ModelState.Valid {
-			return web.Invalid(ctx, viewProductIndex)
+			return web.Invalid(ctx, productweb.Texts)
 		}
 		saved, err := service.Save(item)
 		if err != nil {

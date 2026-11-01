@@ -131,8 +131,12 @@ check("the page has the CSRF token and the language buttons", /<meta content="[^
 
 console.log("--- csrf and language");
 const tokenOf = (text) => (text.match(/<meta content="([^"]+)" name="csrf-token"/) || [])[1];
-const token = tokenOf(about);
-const send = (path, init) => fetch(BASE + path, { redirect: "manual", ...init });
+// The token only works with the cookie of the same browser, so keep both.
+const cookiesOf = (res) => res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
+const aboutResponse = await fetch(BASE + "/about");
+const csrfCookie = cookiesOf(aboutResponse);
+const token = tokenOf(await aboutResponse.text());
+const send = (path, init) => fetch(BASE + path, { redirect: "manual", ...init, headers: { cookie: csrfCookie, ...init?.headers } });
 const json = { "Content-Type": "application/json", Accept: "application/json" };
 const newProduct = JSON.stringify({ name: "Zeppelin", category: "Games", price: 12.5, active: true });
 check("a POST with no CSRF token is refused", (await send("/api/products", { method: "POST", headers: json, body: newProduct })).status === 403);
@@ -465,13 +469,15 @@ check("entries: the balanced entry is saved with its four lines, in two currenci
 check("entries: it opens in advanced mode, and the server says why it cannot be a sentence", r.mode === "Basic edit (sentence)" && r.disabled === true && r.why.includes("cannot be edited as a sentence") && r.lines === 4, JSON.stringify([r.mode, r.disabled, r.why, r.lines]));
 
 // A rule of the server: the amounts do not balance (the browser check is skipped on purpose).
-const token2 = tokenOf(await (await fetch(BASE + "/entries")).text());
-const unbalanced = await fetch(BASE + "/api/entries", { method: "POST", headers: { "Content-Type": "application/json", "X-Csrf-Token": token2, Accept: "application/json", cookie: "" }, body: JSON.stringify({
+const entriesResponse = await fetch(BASE + "/entries");
+const csrfCookie2 = cookiesOf(entriesResponse);
+const token2 = tokenOf(await entriesResponse.text());
+const unbalanced = await fetch(BASE + "/api/entries", { method: "POST", headers: { "Content-Type": "application/json", "X-Csrf-Token": token2, Accept: "application/json", cookie: csrfCookie2 }, body: JSON.stringify({
   mode: "advanced", categoryId: 1, date: "2026-03-01", hour: 10, minute: 0, exchangeDate: "2026-03-01",
   lines: [{ account: 100, debit: 10, currency: "EUR" }, { account: 400, credit: 11, currency: "EUR" }] }) });
 const unbalancedBody = await unbalanced.json();
 check("entries: the server refuses an entry that does not balance, with a translated message", unbalanced.status === 400 && unbalancedBody.error.includes("El debe y el haber deben sumar lo mismo"), JSON.stringify([unbalanced.status, unbalancedBody]));
-const oneSide = await fetch(BASE + "/api/entries", { method: "POST", headers: { "Content-Type": "application/json", "X-Csrf-Token": token2, Accept: "application/json" }, body: JSON.stringify({
+const oneSide = await fetch(BASE + "/api/entries", { method: "POST", headers: { "Content-Type": "application/json", "X-Csrf-Token": token2, Accept: "application/json", cookie: csrfCookie2 }, body: JSON.stringify({
   mode: "advanced", categoryId: 1, date: "2026-03-01", hour: 10, minute: 0,
   lines: [{ account: 100, debit: 10, credit: 10, currency: "EUR" }, { account: 400, currency: "EUR" }] }) });
 const oneSideBody = await oneSide.json();

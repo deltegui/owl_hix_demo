@@ -19,7 +19,7 @@ func Island(state string) hx.INode {
 // viewer of an entry. The list stays alive while the second layer is open, so
 // the filter, the order and the page are where the user left them.
 func Build(s State) hx.INode {
-	a := newApp(s.Texts, s.Lookups)
+	a := newApp(TextsFor(s.Lang), s.Lookups)
 
 	main := hx.Div().Attribute("data-layer", "list").Body(list(a, s.Listing))
 	main.Effect(func() { main.ClassIf("d-none", a.open.Get().Kind != "") })

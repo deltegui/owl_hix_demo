@@ -8,13 +8,11 @@ import (
 	"owldemo/web/ui/bs"
 )
 
-const viewAboutIndex string = "about/about_index"
-
 // handleShowIndex is a page that is only HTML, built with Hix on the server. It
 // has no islands: it loads the small WASM, which only carries the theme selector.
 func handleShowIndex() owl.Handler {
 	return func(ctx owl.Ctx) error {
-		t := ctx.GetLocalizer(viewAboutIndex)
+		t := ctx.Texts(viewAboutIndex)
 		return layout.Render(ctx, layout.Page{
 			Title:  t.Get("Title"),
 			Bundle: "lite",

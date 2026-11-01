@@ -9,28 +9,29 @@ import (
 
 	"github.com/deltegui/owl/v3"
 	"github.com/deltegui/owl/v3/core"
+	"github.com/deltegui/owl/v3/localizer"
 	"github.com/deltegui/valtruc"
 
 	"owldemo/web/ui/crud"
 )
 
 // Invalid answers 422 with what ctx.Validate found, by field and translated with
-// the file of the view (the field names come from there). The fields are named
+// the texts of the view (the field names come from there). The fields are named
 // like the JSON of the model, which is what the island knows.
 //
 // A missing value is the only thing worth saying about a field: the other rules
 // would only repeat it.
-func Invalid(ctx owl.Ctx, file string) error {
-	vm := ctx.ViewModel(file, nil)
+func Invalid(ctx owl.Ctx, texts localizer.Source) error {
+	loc := ctx.Texts(texts)
 	errs := map[string][]string{}
 	for field, list := range ctx.ModelState.Errors {
 		name := jsonPath(field)
 		for _, err := range list {
 			if err.GetIdentifier() == valtruc.RequiredIdentifier {
-				errs[name] = []string{vm.FormatError(err)}
+				errs[name] = []string{owl.FormatError(loc, err)}
 				break
 			}
-			errs[name] = append(errs[name], vm.FormatError(err))
+			errs[name] = append(errs[name], owl.FormatError(loc, err))
 		}
 	}
 	ctx.Status(http.StatusUnprocessableEntity)

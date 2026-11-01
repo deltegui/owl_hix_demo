@@ -8,10 +8,7 @@ import (
 
 	formsweb "owldemo/feature/forms/web"
 	"owldemo/web/layout"
-	"owldemo/web/ui/crud"
 )
-
-const viewFormsIndex string = "forms/forms_index"
 
 // handleShowIndex renders the page of a form: the form is drawn by the server
 // and its description goes in the state, so the browser has nothing to load.
@@ -22,8 +19,9 @@ func handleShowIndex(service formsService) owl.Handler {
 			ctx.Status(http.StatusNotFound)
 			return ctx.String("Not found")
 		}
-		t := crud.Texts(ctx.GetLocalizer(viewFormsIndex))
-		state, _ := json.Marshal(formsweb.State{Form: form, Texts: t})
+		lang := ctx.GetCurrentLanguage()
+		t := formsweb.TextsFor(lang)
+		state, _ := json.Marshal(formsweb.State{Form: form, Lang: lang})
 		return layout.Render(ctx, layout.Page{
 			Title:   t.Get(form.Title),
 			Bundle:  "forms",

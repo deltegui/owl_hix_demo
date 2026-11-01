@@ -6,8 +6,6 @@
 // The valtruc tags are only read by the server.
 package productweb
 
-import "owldemo/web/ui/crud"
-
 type Product struct {
 	ID       int     `json:"id"`
 	Name     string  `json:"name" valtruc:"min=3, max=60, required"`
@@ -28,5 +26,5 @@ type CategoryStat struct {
 // StatsState is the state of the chart island.
 type StatsState struct {
 	Stats []CategoryStat `json:"stats"`
-	Texts crud.Texts     `json:"t"`
+	Lang  string         `json:"l"`
 }

@@ -1,0 +1,21 @@
+package locale
+
+import "github.com/deltegui/owl/v3/localizer"
+
+// Errors is the translations of the core.DomainError codes.
+var Errors = localizer.Dict{
+	localizer.LangSpanish: {
+		"2001": "El debe y el haber deben sumar lo mismo (en euros).",
+		"2002": "Las líneas no son una operación básica: no se pueden editar como una frase.",
+		"2003": "Las cuentas no encajan con la operación.",
+		"2004": "La entrada no es válida.",
+		"2005": "La entrada no existe.",
+	},
+	localizer.LangEnglish: {
+		"2001": "Debit and credit must add up to the same (in euros).",
+		"2002": "The lines are not a basic operation: they cannot be edited as a sentence.",
+		"2003": "The accounts do not fit the operation.",
+		"2004": "The entry is not valid.",
+		"2005": "The entry does not exist.",
+	},
+}

@@ -23,15 +23,16 @@ func Stats(state StatsState) hx.INode {
 	} else {
 		stats = hx.ResourceFor(Version, load)
 	}
+	t := TextsFor(state.Lang)
 	data := getData(func() chart.Data {
 		var d chart.Data
 		for _, s := range stats.Value().Get() {
-			d.Labels = append(d.Labels, state.Texts.Or("Opt."+s.Category, s.Category))
+			d.Labels = append(d.Labels, t.Or("Opt."+s.Category, s.Category))
 			d.Values = append(d.Values, s.Value)
 		}
 		return d
 	})
-	return bs.Card(state.Texts.Get("StatsTitle"), chart.New("bar", state.Texts.Get("StatsLabel"), data))
+	return bs.Card(t.Get("StatsTitle"), chart.New("bar", t.Get("StatsLabel"), data))
 }
 
 // getData is a function that can be read like a signal.

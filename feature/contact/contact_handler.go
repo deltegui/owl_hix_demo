@@ -16,8 +16,6 @@ import (
 	"owldemo/web/ui/crud"
 )
 
-const viewContactIndex string = "contact/contact_index"
-
 func filterOf(ctx owl.Ctx) contactFilter {
 	return contactFilter{
 		Query:  ctx.GetQueryParam("q"),
@@ -35,8 +33,6 @@ func pageOf(list pagination.List[contactweb.Contact]) crud.Page[contactweb.Conta
 	}
 }
 
-func texts(ctx owl.Ctx) crud.Texts { return crud.Texts(ctx.GetLocalizer(viewContactIndex)) }
-
 func encode(v any) string {
 	text, _ := json.Marshal(v)
 	return string(text)
@@ -50,12 +46,13 @@ func handleShowIndex(service contactService) owl.Handler {
 			return ctx.StringInternalServerError("Error finding contacts")
 		}
 		page := pageOf(list)
-		t := texts(ctx)
+		lang := ctx.GetCurrentLanguage()
+		t := contactweb.TextsFor(lang)
 		return layout.Render(ctx, layout.Page{
 			Title:  t.Get("Title"),
 			Bundle: "full",
 			Islands: []layout.Island{
-				{Name: "contacts", State: encode(crud.State[contactweb.Contact]{Page: &page, Texts: t}), Build: contactweb.ListIsland},
+				{Name: "contacts", State: encode(crud.State[contactweb.Contact]{Page: &page, Lang: lang}), Build: contactweb.ListIsland},
 			},
 		})
 	}
@@ -86,7 +83,7 @@ func handleSave(service contactService) owl.Handler {
 		item.ID = id
 		ctx.Validate(item)
 		if !ctx.ModelState.Valid {
-			return web.Invalid(ctx, viewContactIndex)
+			return web.Invalid(ctx, contactweb.Texts)
 		}
 		saved, err := service.Save(item)
 		if err != nil {

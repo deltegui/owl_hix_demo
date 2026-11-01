@@ -16,8 +16,8 @@ type Errors struct {
 }
 
 // State is what the server sends with the island: the first page, and the
-// translations. Both sides build the screen from it.
+// language. Both sides build the screen from it.
 type State[T any] struct {
-	Page  *Page[T] `json:"page"`
-	Texts Texts    `json:"t"`
+	Page *Page[T] `json:"page"`
+	Lang string   `json:"l"`
 }

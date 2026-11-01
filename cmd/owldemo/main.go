@@ -6,9 +6,12 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"log"
 
 	"owldemo/feature/about"
+	"owldemo/feature/bulma"
+	"owldemo/feature/bsdemo"
+	"owldemo/feature/coat"
 	"owldemo/feature/contact"
 	"owldemo/feature/entry"
 	"owldemo/feature/forms"
@@ -21,16 +24,18 @@ import (
 	"owldemo/web/static"
 
 	"github.com/deltegui/owl/v3"
-	"github.com/deltegui/owl/v3/core"
+	"github.com/deltegui/owl/v3/cipher"
 	"github.com/deltegui/owl/v3/csrf"
-	"github.com/deltegui/owl/v3/cypher"
 	"github.com/deltegui/owl/v3/middleware"
 )
 
 func main() {
 	conf := config.CreateAndLoad()
 	fmt.Println("owldemo", conf.Version)
-	ctx := wire(conf)
+	ctx, err := wire(conf)
+	if err != nil {
+		log.Fatalln("owldemo:", err)
+	}
 	ctx.Mux.Listen(conf.ListenURL)
 }
 
@@ -38,28 +43,32 @@ var modules = []bootstrap.BootstrapFunc{
 	menu.Bootstrap,
 	language.Bootstrap,
 	about.Bootstrap,
+	bulma.Bootstrap,
+	coat.Bootstrap,
+	bsdemo.Bootstrap,
 	forms.Bootstrap,
 	entry.Bootstrap,
 	product.Bootstrap,
 	contact.Bootstrap,
 }
 
-func wire(conf config.Configuration) bootstrap.Context {
-	cy := cypher.NewWithPassword(conf.Secret)
+func wire(conf config.Configuration) (bootstrap.Context, error) {
+	cy, err := cipher.NewWithKeys(conf.Secret)
+	if err != nil {
+		return bootstrap.Context{}, err
+	}
 
 	r := owl.New(cy)
 	r.StaticEmbedded(static.Files)
-	r.AddLocalization(locale.Files, locale.Shared, locale.Errors)
-
-	// HixRenderer is the default. The templates of LittleCash would be
-	// r.SetRenderer(owl.TemplateRenderer{}).
+	r.AddLocalization(owl.Localization{Shared: locale.Shared, Errors: locale.Errors, Languages: locale.Languages})
 
 	r.Use(middleware.Logger)
-	r.Use(middleware.Csrf(csrf.New(1*time.Hour, cy)))
+	// The demo is served over plain http, where a Secure cookie is not kept.
+	r.Use(middleware.Csrf(csrf.New(cy, csrf.WithSecure(false))))
 
-	ctx := bootstrap.Context{Mux: r, Configuration: conf, Cypher: core.Cypher(cy)}
+	ctx := bootstrap.Context{Mux: r, Configuration: conf, Cipher: cy}
 	for _, bootstrapFunc := range modules {
 		bootstrapFunc(ctx)
 	}
-	return ctx
+	return ctx, nil
 }

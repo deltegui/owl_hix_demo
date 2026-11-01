@@ -6,8 +6,6 @@
 // The valtruc tags are only read by the server.
 package entryweb
 
-import "owldemo/web/ui/crud"
-
 // Line is one line of an entry, as the editor writes it. Debit and Credit are
 // pointers because exactly one of them must be there.
 type Line struct {
@@ -122,11 +120,11 @@ type Lookups struct {
 }
 
 // State is the state of the island: the first page, the lookups and the
-// translations. Both sides build the screen from it.
+// language. Both sides build the screen from it.
 type State struct {
-	Listing *Listing   `json:"listing"`
-	Lookups Lookups    `json:"lookups"`
-	Texts   crud.Texts `json:"t"`
+	Listing *Listing `json:"listing"`
+	Lookups Lookups  `json:"lookups"`
+	Lang    string   `json:"l"`
 }
 
 // LineRequest is what the server needs to price a line: the line, and the day of the rates.

@@ -15,5 +15,5 @@ type BootstrapFunc func(Context)
 type Context struct {
 	Mux           *owl.Mux
 	Configuration config.Configuration
-	Cypher        core.Cypher
+	Cipher        core.Cipher
 }

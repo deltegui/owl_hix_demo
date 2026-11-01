@@ -11,7 +11,7 @@ make check     # 84 checks in a real browser (node 22+, chromium, network for Bo
 ## Layout
 
 ```
-cmd/owldemo/main.go        wire(): the cypher, the Mux, the middleware, the list of modules
+cmd/owldemo/main.go        wire(): the cipher, the Mux, the middleware, the list of modules
 sys/
   ledger/                  the accounting: accounts, groups, basic operations, balance (plain Go, builds for the browser too)
   currency/                the currencies and a daily exchange rate
@@ -30,7 +30,7 @@ feature/
   about/                   a page that is only HTML
 web/
   layout/                  the page around the features: menu, theme, language, islands
-  locale/                  the translations, a json file per view, like LittleCash
+  locale/                  the translations of the whole app (shared, errors, pagination); the ones of a page are next to its code
   static/                  wasm_exec.js and the WASM files (embedded in the server)
   ui/                      Bootstrap wrappers (bs), the generic CRUD screen (crud), chart, theme, island
 client/                    the three WASM entry points: lite, full and forms
@@ -47,7 +47,7 @@ A feature has the three files LittleCash has (`*_bootstrap.go` registers the rou
 - **Basic mode** writes an entry as a sentence: *Expense of 99.50 USD from Bank to Operating expenses*. The accounts each side offers depend on the operation (an income takes money from an income account into an asset), and changing the operation replaces an account that does not fit.
 - **Advanced mode** is a table of lines (account, debit, credit, currency, notes): typing in one side hides the other, an arrow shows if the amount raises or lowers the account, each line shows its amount in euros, and the sums of the two sides are red until they are equal. A line in another currency asks the server for its rate (each line has its own `hx.Action`, since the last call of one would cancel the call of another).
 - **Changing the mode is the server's decision** (`POST /api/entries/convert`): a basic entry becomes two lines, and lines become a sentence only if they are a basic operation (a debit and a credit, one currency, accounts in the groups of an operation). An entry that is not one opens in advanced mode with the button disabled and the reason.
-- **Validation** is the one of LittleCash: the valtruc tags of the model (`ctx.Validate`), then the rules of each mode as custom errors (`customMandatory` for an incomplete sentence, `customCreditDebitOnlyOneSetted` for a line), by field, even on a line (`lines[1].debit`); and a rule of the domain that is not about a field (the entry does not balance, in euros) is a `core.DomainError` whose code is translated in `common/errors.json` and shown over the form.
+- **Validation** is the one of LittleCash: the valtruc tags of the model (`ctx.Validate`), then the rules of each mode as custom errors (`customMandatory` for an incomplete sentence, `customCreditDebitOnlyOneSetted` for a line), by field, even on a line (`lines[1].debit`); and a rule of the domain that is not about a field (the entry does not balance, in euros) is a `core.DomainError` whose code is translated in `web/locale/errors.go` and shown over the form.
 - **The rules are in `sys/ledger`**, plain Go that the server uses to decide and the browser to draw the same arrows and lists. Amounts are `int64` cents, like LittleCash.
 
 The files are the ones of any feature: `entry_bootstrap.go` (routes), `entry_handler.go` (the page and the JSON API), `entry_service.go` (filter, order, pagination, save), `entry_mapping.go` (the models of the editor and the entries of the domain, and the conversion) and `entry_lookup.go` (what the screens pick from), plus `web/`.
@@ -55,8 +55,8 @@ The files are the ones of any feature: `entry_bootstrap.go` (routes), `entry_han
 ## What OWL does here
 
 - **Routes and middleware.** `Mux.CreateSubMux("/api/products")`, `Get`/`Post`/`Put`/`Delete` with `:id`, `Use(middleware.Csrf(...))`, as in LittleCash.
-- **The renderer is Hix.** `ctx.View(owl.HixView(...))` renders with `hx/ssr`. `layout.Render(ctx, page)` is the one place that builds the HTML of a page (what `views/shared/layout.html` is in LittleCash). To use the templates of LittleCash in a project, `mux.SetRenderer(owl.TemplateRenderer{})`.
-- **Localization.** Spanish by default, English with the buttons of the menu (a form, so it works without JavaScript; `POST /language/:lang` keeps only paths of this site in `Next`). The texts are in `web/locale/<feature>/<view>.json` plus `common/shared.json`, like LittleCash. The server translates the page with `hxui.NewView(ctx, file)`, and the islands get the same translations in their state: `ctx.GetLocalizer(view)` is a `map[string]string`, which is sent as is, so the browser writes the same words the server did and hydration matches.
+- **Views are Hix.** `ctx.View(owl.HixView(...))` renders with `hx/ssr`. `layout.Render(ctx, page)` is the one place that builds the HTML of a page (what `views/shared/layout.html` is in LittleCash).
+- **Localization.** Spanish by default (the first of `locale.Languages`), English with the buttons of the menu, which come from that same list (a form, so it works without JavaScript; `POST /language/:lang` keeps only paths of this site in `Next`). The texts of a page are a `localizer.Dict` next to its code (`feature/<feature>/web/<feature>_locale.go`, which also compiles to WASM), plus `web/locale/shared.go`; each one has a test with `localizer.Check`. The server translates the page with `hxui.NewView(ctx, dict)`, and the islands translate themselves: the state of an island carries only the language, and both the server and the browser build the words with `TextsFor(lang)` from the same dictionaries, so hydration matches.
 - **CSRF.** The middleware checks every request that is not a GET. The page has the token in `<meta name="csrf-token">`, the language buttons send it as a hidden field and the islands send it in the `X-Csrf-Token` header (`crud.Send`).
 - **Validation.** `ctx.Validate(item)` with the valtruc tags of the model. `web.Invalid` answers 422 with the errors by field, translated with the file of the view (the names of the fields come from there), and the island shows them under each field.
 - **Pagination.** `pagination.Pagination` and `pagination.List[T]` in the services, as in LittleCash. The JSON answer is `crud.Page`.
@@ -84,4 +84,4 @@ Each page loads the one it needs (`Bundle` in `layout.Page`); a Go WASM cannot l
 
 ## Not here
 
-A database (the repository is a map), sessions and login (LittleCash has them: `session.Manager` and `middleware.Authorize` would go in `sys/bootstrap` and each feature's sub-mux), and the URL reflecting the filter and page.
+A database (the repository is a map), sessions and login (LittleCash has them: `session.Manager` (`session.NewManager(cipher, opts...)`) and `middleware.Authorize` would go in `sys/bootstrap` and each feature's sub-mux), and the URL reflecting the filter and page.

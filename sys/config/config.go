@@ -9,7 +9,7 @@ import (
 type Configuration struct {
 	Version   string
 	ListenURL string
-	// Secret encrypts cookies and CSRF tokens. If OWLDEMO_SECRET is not set, a
+	// Secret seals cookies and CSRF tokens. If OWLDEMO_SECRET is not set, a
 	// random one is made at startup (the cookies of a previous run stop working).
 	Secret []byte
 }

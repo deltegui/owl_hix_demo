@@ -16,12 +16,7 @@ import (
 	"owldemo/sys/persistence"
 	"owldemo/web"
 	"owldemo/web/layout"
-	"owldemo/web/ui/crud"
 )
-
-const viewEntryIndex string = "entry/entry_index"
-
-func texts(ctx owl.Ctx) crud.Texts { return crud.Texts(ctx.GetLocalizer(viewEntryIndex)) }
 
 func listing(list pagination.List[ledger.Entry], sum int64) entryweb.Listing {
 	p := list.Pagination
@@ -63,8 +58,9 @@ func handleShowIndex(service entryService) owl.Handler {
 			return ctx.StringInternalServerError("Error finding entries")
 		}
 		first := listing(list, sum)
-		t := texts(ctx)
-		state, _ := json.Marshal(entryweb.State{Listing: &first, Lookups: lookups(), Texts: t})
+		lang := ctx.GetCurrentLanguage()
+		t := entryweb.TextsFor(lang)
+		state, _ := json.Marshal(entryweb.State{Listing: &first, Lookups: lookups(), Lang: lang})
 		return layout.Render(ctx, layout.Page{
 			Title:   t.Get("Title"),
 			Bundle:  "entries",
@@ -129,7 +125,7 @@ func handleSave(service entryService) owl.Handler {
 
 		validate(&ctx, dto)
 		if !ctx.ModelState.Valid {
-			return web.Invalid(ctx, viewEntryIndex)
+			return web.Invalid(ctx, entryweb.Texts)
 		}
 		e, err := toDomain(dto)
 		if err != nil {
@@ -192,7 +188,7 @@ func handleConvert() owl.Handler {
 // every line of the advanced mode has either a debit or a credit).
 func validate(ctx *owl.Ctx, dto entryweb.Entry) {
 	ctx.Validate(dto)
-	loc := ctx.GetLocalizer(viewEntryIndex)
+	loc := ctx.Texts(entryweb.Texts)
 	custom := func(identifier, field string) []core.ValidationError {
 		return []core.ValidationError{core.CustomValidationError{
 			ErrorMessage: loc.Get(identifier), StructName: "Entry", FieldName: field, Identifier: valtrucID(identifier),

@@ -23,7 +23,7 @@ type Contact struct {
 // another configuration.
 func Screen(state crud.State[Contact]) hx.INode {
 	return crud.Screen(crud.Config[Contact]{
-		Texts:   state.Texts,
+		Texts:   TextsFor(state.Lang),
 		API:     "/api/contacts",
 		Initial: state.Page,
 		ID:      func(c Contact) int { return c.ID },
